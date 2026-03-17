@@ -1,6 +1,8 @@
-// Model options: 'gpt-4o' | 'gpt-4o-mini' | 'gpt-4-turbo'
-// gpt-4o-mini is cheapest, gpt-4o is most capable
-const OPENAI_MODEL = 'gpt-4o-mini';
+// Model options:
+// 'gemini-2.0-flash'        → fast, free tier friendly (recommended)
+// 'gemini-2.5-pro-preview-05-06' → most capable
+// 'gemini-2.0-flash-lite'   → lightest/cheapest
+const GEMINI_MODEL = 'gemini-2.0-flash';
 
 export default async function handler(req, res) {
   // CORS headers
@@ -12,12 +14,12 @@ export default async function handler(req, res) {
 
   // GET /api/claude → health check
   if (req.method === 'GET') {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     return res.status(200).json({
       status: 'ok',
       keyConfigured: !!apiKey,
       keyPrefix: apiKey ? apiKey.slice(0, 8) + '...' : 'NOT SET',
-      model: OPENAI_MODEL,
+      model: GEMINI_MODEL,
     });
   }
 
@@ -25,17 +27,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const apiKey = (process.env.OPENAI_API_KEY || '').trim();
+  const apiKey = (process.env.GEMINI_API_KEY || '').trim();
 
   if (!apiKey) {
     return res.status(500).json({
-      error: 'OPENAI_API_KEY is not set. Add it in Vercel → Project → Settings → Environment Variables, then redeploy.'
-    });
-  }
-
-  if (!apiKey.startsWith('sk-')) {
-    return res.status(500).json({
-      error: `API key format looks wrong (got prefix: "${apiKey.slice(0, 5)}"). Keys should start with sk-`
+      error: 'GEMINI_API_KEY is not set. Add it in Vercel → Project → Settings → Environment Variables, then redeploy.'
     });
   }
 
@@ -46,37 +42,43 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Missing user message' });
     }
 
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Correct Gemini REST endpoint with x-goog-api-key header
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        'x-goog-api-key': apiKey,
       },
       body: JSON.stringify({
-        model: OPENAI_MODEL,
-        max_tokens: 1500,
-        temperature: 0.2,
-        messages: [
-          { role: 'system', content: system || 'You are a helpful real estate assistant.' },
-          { role: 'user', content: user },
+        systemInstruction: {
+          parts: [{ text: system || 'You are a helpful real estate assistant.' }]
+        },
+        contents: [
+          { role: 'user', parts: [{ text: user }] }
         ],
+        generationConfig: {
+          maxOutputTokens: 1500,
+          temperature: 0.2,
+        },
       }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      console.error('OpenAI error:', JSON.stringify(data));
+      console.error('Gemini error:', JSON.stringify(data));
       return res.status(response.status).json({
-        error: data.error?.message || `OpenAI returned ${response.status}`
+        error: data.error?.message || `Gemini returned ${response.status}`
       });
     }
 
-    const text = data.choices?.[0]?.message?.content || '';
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     return res.status(200).json({ text });
 
   } catch (err) {
-    console.error('OpenAI proxy error:', err);
+    console.error('Gemini proxy error:', err);
     return res.status(500).json({ error: err.message || 'Internal server error' });
   }
 }
