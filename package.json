@@ -1,0 +1,8 @@
+{
+  "name": "phd-properties-analyzer",
+  "version": "1.0.0",
+  "description": "PHD Properties Investment Analyzer",
+  "engines": {
+    "node": ">=18"
+  }
+}

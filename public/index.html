@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PHD Properties — Investment Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#3ecf8e;--green-dim:#1a5c3e;--green-bg:#0a1f16;
+  --amber:#f5a623;--red:#e05252;
+  --bg:#0d0d0d;--bg2:#141414;--bg3:#181818;--bg4:#1c1c1c;
+  --border:#222;--border2:#1e1e1e;
+  --text:#e8e8e8;--muted:#666;--dim:#444;
+  --card-shadow:0 1px 3px rgba(0,0,0,.6);
+}
+body{font-family:'DM Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+
+/* ── HEADER ── */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 28px;border-bottom:1px solid var(--border);
+  background:var(--bg2);position:sticky;top:0;z-index:100;
+}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{
+  width:32px;height:32px;background:var(--green);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:#000;
+}
+.logo-text{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:#fff;letter-spacing:-.3px}
+.logo-text span{color:var(--green)}
+.hdr-right{font-size:10px;color:var(--dim);letter-spacing:.5px;text-align:right;line-height:1.6}
+
+/* ── MAIN LAYOUT ── */
+.app{max-width:960px;margin:0 auto;padding:32px 24px}
+
+/* ── SEARCH HERO ── */
+.search-hero{text-align:center;padding:48px 0 36px}
+.hero-label{
+  font-size:10px;letter-spacing:2px;color:var(--green);text-transform:uppercase;
+  font-weight:500;margin-bottom:14px;
+}
+.hero-title{
+  font-family:'Syne',sans-serif;font-size:32px;font-weight:800;
+  color:#fff;margin-bottom:8px;line-height:1.15;
+}
+.hero-sub{font-size:12px;color:var(--muted);margin-bottom:32px;line-height:1.6}
+
+.search-outer{position:relative;max-width:580px;margin:0 auto}
+.search-row{display:flex;gap:8px}
+.search-wrap{position:relative;flex:1}
+.search-wrap input{
+  width:100%;background:var(--bg2);border:1px solid #2a2a2a;border-radius:10px;
+  padding:14px 48px 14px 18px;font-size:14px;color:var(--text);
+  outline:none;font-family:'DM Mono',monospace;
+  transition:border-color .2s;
+}
+.search-wrap input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(62,207,142,.08)}
+.search-wrap input::placeholder{color:var(--dim)}
+.search-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--dim);pointer-events:none;font-size:16px}
+.analyze-btn{
+  padding:14px 20px;background:var(--green);color:#000;border:none;border-radius:10px;
+  font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;
+  white-space:nowrap;transition:background .2s,transform .1s;
+  display:flex;align-items:center;gap:6px;
+}
+.analyze-btn:hover{background:#2fb87a;transform:translateY(-1px)}
+.analyze-btn:active{transform:none}
+.analyze-btn:disabled{background:#1a5c3e;color:#0d3020;cursor:not-allowed;transform:none}
+
+.dd{
+  display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;
+  background:#1a1a1a;border:1px solid #2a2a2a;border-radius:10px;
+  z-index:999;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.6);
+}
+.dd.show{display:block}
+.dd-item{padding:11px 16px;cursor:pointer;border-bottom:1px solid #222;transition:background .15s}
+.dd-item:last-child{border:none}
+.dd-item:hover{background:#222}
+.dd-a1{font-size:13px;color:#fff;font-weight:500}
+.dd-a2{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* ── STATUS BAR ── */
+.status-bar{
+  display:none;background:var(--green-bg);border:1px solid var(--green-dim);
+  border-radius:10px;padding:12px 16px;margin-bottom:20px;
+  font-size:12px;color:var(--green);align-items:center;gap:10px;
+}
+.status-bar.show{display:flex}
+.spin{
+  width:12px;height:12px;border:2px solid var(--green);
+  border-top-color:transparent;border-radius:50%;
+  animation:spin .7s linear infinite;flex-shrink:0;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.progress-steps{display:flex;gap:6px;flex-wrap:wrap}
+.pstep{
+  font-size:10px;padding:3px 8px;border-radius:4px;
+  background:rgba(62,207,142,.08);color:var(--green-dim);
+  border:1px solid rgba(62,207,142,.12);transition:all .3s;
+}
+.pstep.active{background:rgba(62,207,142,.15);color:var(--green);border-color:rgba(62,207,142,.3)}
+.pstep.done{background:rgba(62,207,142,.2);color:var(--green)}
+
+/* ── RESULTS ── */
+#results-area{display:none}
+
+.prop-banner{
+  background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+  padding:18px 22px;margin-bottom:16px;
+  display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;
+}
+.prop-addr{font-family:'Syne',sans-serif;font-size:17px;font-weight:700;color:#fff;margin-bottom:4px}
+.prop-meta{font-size:11px;color:var(--muted);line-height:1.7}
+.prop-meta span{color:#888}
+.prop-badge{
+  padding:6px 14px;border-radius:20px;font-size:11px;font-weight:600;
+  font-family:'Syne',sans-serif;letter-spacing:.5px;
+}
+.badge-strong{background:rgba(62,207,142,.15);color:var(--green);border:1px solid rgba(62,207,142,.3)}
+.badge-good{background:rgba(62,207,142,.1);color:#2fb87a;border:1px solid rgba(62,207,142,.2)}
+.badge-fair{background:rgba(245,166,35,.12);color:var(--amber);border:1px solid rgba(245,166,35,.25)}
+.badge-pass{background:rgba(224,82,82,.12);color:var(--red);border:1px solid rgba(224,82,82,.25)}
+
+/* ── TABS ── */
+.tabs-row{display:flex;gap:2px;background:var(--bg2);border-radius:8px;padding:3px;width:fit-content;margin-bottom:18px}
+.tab-btn{
+  padding:6px 14px;border-radius:6px;font-size:11px;font-family:'DM Mono',monospace;
+  cursor:pointer;color:var(--muted);border:none;background:none;
+  transition:all .2s;letter-spacing:.3px;
+}
+.tab-btn.on{background:var(--bg4);color:#fff;border:1px solid var(--border2)}
+
+/* ── METRIC CARDS ── */
+.metric-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.mcard{
+  background:var(--bg2);border:1px solid var(--border);border-radius:10px;
+  padding:14px 16px;
+}
+.mcard-lbl{font-size:9px;color:var(--dim);letter-spacing:1.2px;text-transform:uppercase;margin-bottom:6px}
+.mcard-val{font-size:20px;font-weight:500;font-family:'Syne',sans-serif;color:var(--text)}
+.mcard-val.g{color:var(--green)}
+.mcard-val.a{color:var(--amber)}
+.mcard-val.r{color:var(--red)}
+.mcard-sub{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* ── SECTION ── */
+.sec{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:14px}
+.sec-hdr{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border2)}
+
+/* ── CASHFLOW ── */
+.cf-cols{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.cf-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1a1a1a;font-size:12px}
+.cf-row:last-child{border:none;font-weight:600;padding-top:10px;margin-top:4px}
+.cf-lbl{color:var(--muted)}
+.cf-val{font-weight:500}
+.cf-val.g{color:var(--green)}
+.cf-val.r{color:var(--red)}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{
+  text-align:left;color:var(--dim);font-weight:500;padding:6px 10px;
+  border-bottom:1px solid var(--border2);font-size:9px;letter-spacing:.8px;text-transform:uppercase;
+}
+tbody td{padding:8px 10px;color:#aaa;border-bottom:1px solid #181818}
+tbody tr:hover td{background:var(--bg3)}
+tbody tr:last-child td{border:none}
+
+/* ── PROPERTY FIELDS ── */
+.prop-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.pfield{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:10px 12px}
+.pfield-lbl{font-size:9px;color:var(--dim);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px}
+.pfield input{
+  width:100%;background:transparent;border:none;outline:none;
+  font-size:13px;font-weight:500;color:var(--text);font-family:'DM Mono',monospace;
+}
+.pfield input.g{color:var(--green)}
+.pfield input::placeholder{color:var(--dim)}
+
+/* ── INPUTS ── */
+.input-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
+.ifield label{font-size:9px;color:var(--dim);letter-spacing:.8px;text-transform:uppercase;display:block;margin-bottom:5px}
+.ifield input{
+  width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:7px;
+  padding:8px 10px;font-size:13px;color:var(--text);outline:none;font-family:'DM Mono',monospace;
+  transition:border-color .2s;
+}
+.ifield input:focus{border-color:var(--green)}
+
+/* ── AI SUMMARY ── */
+.ai-box{
+  background:var(--green-bg);border:1px solid var(--green-dim);
+  border-radius:10px;padding:16px;margin-top:12px;
+}
+.ai-lbl{font-size:9px;color:var(--green);letter-spacing:1.5px;text-transform:uppercase;font-weight:600;margin-bottom:8px}
+.ai-text{font-size:12px;line-height:1.7;color:#8ecfae}
+
+/* ── CTA ── */
+.cta-row{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btn{
+  padding:10px 18px;border-radius:8px;font-size:12px;font-family:'DM Mono',monospace;
+  cursor:pointer;border:none;display:flex;align-items:center;gap:6px;transition:all .2s;
+}
+.btn-primary{background:var(--green);color:#000;font-weight:600}
+.btn-primary:hover{background:#2fb87a}
+.btn-ghost{background:transparent;border:1px solid #2a2a2a;color:#888}
+.btn-ghost:hover{border-color:#444;color:#ccc}
+
+/* ── REPORT OVERLAY ── */
+.rpt-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:1000;overflow-y:auto;padding:40px 20px}
+.rpt-overlay.open{display:block}
+.close-rpt{position:fixed;top:16px;right:16px;background:#222;color:#fff;border:1px solid #333;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;z-index:1001}
+.rpt-page{background:#fff;color:#111;max-width:820px;margin:0 auto;border-radius:6px;overflow:hidden;font-family:Georgia,serif}
+.rh{background:#0d0d0d;padding:28px 32px;display:flex;justify-content:space-between;align-items:flex-end}
+.rl{color:#fff;font-size:20px;font-weight:800;font-family:'Syne',sans-serif}
+.rl span{color:var(--green);font-size:11px;display:block;font-weight:400;margin-top:3px;font-family:'DM Mono',monospace;letter-spacing:1px}
+.ra{color:#777;font-size:10px;font-family:'DM Mono',monospace;text-align:right;line-height:1.7}
+.rb{padding:28px 32px}
+.rp-prop{margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #eee}
+.rp-prop h2{font-size:19px;font-weight:700;font-family:'Syne',sans-serif;margin-bottom:4px}
+.rp-prop .sub{font-size:12px;color:#888;font-family:'DM Mono',monospace}
+.rs{margin-bottom:20px}
+.rs h3{font-size:9px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#aaa;margin-bottom:10px;font-family:'DM Mono',monospace;border-bottom:1px solid #eee;padding-bottom:6px}
+.rg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.rc-card{background:#f8f8f8;border-radius:6px;padding:10px 12px;border:1px solid #eee}
+.rc-card .rl2{font-size:9px;color:#aaa;font-family:'DM Mono',monospace;margin-bottom:3px}
+.rc-card .rv{font-size:15px;font-weight:700;font-family:'Syne',sans-serif}
+.rv.g{color:#1a7a55}.rv.a{color:#b87a10}.rv.r{color:#c0392b}
+.rcf{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.rr{display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid #f0f0f0;font-family:'DM Mono',monospace}
+.rr .rl3{color:#888}.rr .rv2{font-weight:600}
+.r5{width:100%;border-collapse:collapse;font-size:11px;font-family:'DM Mono',monospace}
+.r5 th{background:#f5f5f5;padding:6px 10px;text-align:left;font-weight:600;border:1px solid #e0e0e0;color:#666;font-size:9px;letter-spacing:.5px;text-transform:uppercase}
+.r5 td{padding:6px 10px;border:1px solid #ebebeb}
+.r5 tr:nth-child(even) td{background:#fafafa}
+.rsummary{background:#f0faf6;border:1px solid #c0e8d4;border-radius:6px;padding:14px;font-size:12px;line-height:1.7;color:#1a4d35;font-family:'DM Mono',monospace}
+.rfoot{background:#f5f5f5;padding:12px 32px;font-size:9px;color:#aaa;font-family:'DM Mono',monospace;display:flex;justify-content:space-between;border-top:1px solid #e0e0e0}
+
+/* ── SAVED ── */
+.saved-list{display:flex;flex-direction:column;gap:8px}
+.saved-item{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:8px;
+  padding:12px 16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;
+  transition:border-color .2s;
+}
+.saved-item:hover{border-color:var(--green)}
+.si-addr{font-size:13px;font-weight:600;color:#fff;font-family:'Syne',sans-serif}
+.si-meta{font-size:10px;color:var(--dim);margin-top:2px}
+.empty-state{text-align:center;padding:36px;color:var(--dim);font-size:12px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  .metric-grid{grid-template-columns:repeat(2,1fr)}
+  .cf-cols{grid-template-columns:1fr}
+  .rg{grid-template-columns:repeat(2,1fr)}
+  .rcf{grid-template-columns:1fr}
+  .hero-title{font-size:24px}
+  .search-row{flex-direction:column}
+}
+
+/* ── PRINT ── */
+@media print{
+  body{background:#fff}
+  .app,.header{display:none!important}
+  .rpt-overlay{display:block!important;position:static!important;background:none!important;padding:0!important}
+  .close-rpt{display:none!important}
+  .rpt-page{box-shadow:none!important;border-radius:0!important;max-width:100%!important}
+}
+
+.nav-tabs{display:flex;gap:2px;background:var(--bg2);border-radius:8px;padding:3px;width:fit-content;margin-bottom:24px}
+.nav-tab{padding:6px 16px;border-radius:6px;font-size:11px;cursor:pointer;color:var(--muted);border:none;background:none;font-family:'DM Mono',monospace;letter-spacing:.3px;transition:all .2s}
+.nav-tab.active{background:var(--bg4);color:#fff;border:1px solid var(--border2)}
+
+.data-note{font-size:10px;color:var(--dim);margin-top:8px;font-style:italic}
+
+.edit-hint{font-size:9px;color:var(--dim);letter-spacing:.5px;margin-left:8px;font-weight:400;text-transform:none}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-mark">P</div>
+    <div class="logo-text">PHD <span>Properties</span></div>
+  </div>
+  <div class="hdr-right">444 Race St · Charleston, SC 29403<br>phdproperties.realestate</div>
+</div>
+
+<div class="app">
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showMain('analyzer')">Analyzer</button>
+    <button class="nav-tab" onclick="showMain('saved')">Saved Deals <span id="saved-count"></span></button>
+  </div>
+
+  <!-- ── ANALYZER ── -->
+  <div id="main-analyzer">
+    <div class="search-hero">
+      <div class="hero-label">AI-Powered Analysis</div>
+      <div class="hero-title">Enter an address.<br>Get a full investment report.</div>
+      <div class="hero-sub">Claude AI pulls property data, estimates rent, comps &amp; ROI — instantly.</div>
+
+      <div class="search-outer">
+        <div class="search-row">
+          <div class="search-wrap">
+            <input type="text" id="addr-input" placeholder="123 Main St, Charleston, SC..." autocomplete="off"/>
+            <span class="search-icon">⌕</span>
+            <div id="addr-dd" class="dd"></div>
+          </div>
+          <button class="analyze-btn" id="analyze-btn" onclick="analyzeAddress()">
+            <span id="btn-text">Analyze →</span>
+          </button>
+        </div>
+        <div class="data-note">Uses Google Places for address autocomplete + AI for property data estimation</div>
+      </div>
+    </div>
+
+    <!-- STATUS -->
+    <div class="status-bar" id="status-bar">
+      <div class="spin"></div>
+      <div>
+        <div id="status-msg" style="margin-bottom:6px">Analyzing property...</div>
+        <div class="progress-steps">
+          <div class="pstep" id="step-1">Locating property</div>
+          <div class="pstep" id="step-2">Estimating value &amp; rent</div>
+          <div class="pstep" id="step-3">Pulling comps</div>
+          <div class="pstep" id="step-4">Calculating ROI</div>
+          <div class="pstep" id="step-5">AI summary</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS AREA -->
+    <div id="results-area">
+
+      <!-- PROPERTY BANNER -->
+      <div class="prop-banner">
+        <div>
+          <div class="prop-addr" id="r-addr">—</div>
+          <div class="prop-meta" id="r-meta">—</div>
+        </div>
+        <div id="r-deal-badge" class="prop-badge badge-fair">—</div>
+      </div>
+
+      <!-- TOP METRICS -->
+      <div class="metric-grid">
+        <div class="mcard"><div class="mcard-lbl">Est. Value</div><div class="mcard-val g" id="m-val">—</div><div class="mcard-sub">Market estimate</div></div>
+        <div class="mcard"><div class="mcard-lbl">Monthly Rent</div><div class="mcard-val g" id="m-rent">—</div><div class="mcard-sub">Gross estimate</div></div>
+        <div class="mcard"><div class="mcard-lbl">Cap Rate</div><div class="mcard-val" id="m-cap">—</div><div class="mcard-sub">Net operating income</div></div>
+        <div class="mcard"><div class="mcard-lbl">Cash-on-Cash</div><div class="mcard-val" id="m-coc">—</div><div class="mcard-sub">Annual return</div></div>
+      </div>
+      <div class="metric-grid">
+        <div class="mcard"><div class="mcard-lbl">Monthly Cash Flow</div><div class="mcard-val" id="m-mcf">—</div><div class="mcard-sub">After all expenses</div></div>
+        <div class="mcard"><div class="mcard-lbl">Max Allowable Offer</div><div class="mcard-val a" id="m-mao">—</div><div class="mcard-sub">70% rule</div></div>
+        <div class="mcard"><div class="mcard-lbl">Potential Profit</div><div class="mcard-val" id="m-profit">—</div><div class="mcard-sub">Flip scenario</div></div>
+        <div class="mcard"><div class="mcard-lbl">Deal Rating</div><div class="mcard-val" id="m-rating">—</div><div class="mcard-sub" id="m-rating-sub">—</div></div>
+      </div>
+
+      <!-- TABS -->
+      <div class="tabs-row">
+        <button class="tab-btn on" onclick="showTab(this,'tab-cashflow')">Cash Flow</button>
+        <button class="tab-btn" onclick="showTab(this,'tab-property')">Property Details</button>
+        <button class="tab-btn" onclick="showTab(this,'tab-inputs')">Deal Inputs</button>
+        <button class="tab-btn" onclick="showTab(this,'tab-5yr')">5-Year Projection</button>
+        <button class="tab-btn" onclick="showTab(this,'tab-comps')">Comps</button>
+        <button class="tab-btn" onclick="showTab(this,'tab-amort')">Amortization</button>
+      </div>
+
+      <!-- CASH FLOW TAB -->
+      <div id="tab-cashflow" class="tab-panel">
+        <div class="sec">
+          <div class="sec-hdr">Cash Flow Projection — Held as Rental</div>
+          <div class="cf-cols">
+            <div>
+              <div style="font-size:9px;color:var(--dim);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px">Monthly Income &amp; Expenses</div>
+              <div class="cf-row"><span class="cf-lbl">Gross rent</span><span class="cf-val g" id="cf-rent">—</span></div>
+              <div class="cf-row"><span class="cf-lbl" id="cf-vac-l">Vacancy</span><span class="cf-val r" id="cf-vac">—</span></div>
+              <div class="cf-row"><span class="cf-lbl" id="cf-mgmt-l">Property mgmt</span><span class="cf-val r" id="cf-mgmt">—</span></div>
+              <div class="cf-row"><span class="cf-lbl">Taxes &amp; insurance (est.)</span><span class="cf-val r" id="cf-ti">—</span></div>
+              <div class="cf-row"><span class="cf-lbl">Mortgage payment</span><span class="cf-val r" id="cf-mort">—</span></div>
+              <div class="cf-row"><span class="cf-lbl">Maintenance (1%/yr)</span><span class="cf-val r" id="cf-mnt">—</span></div>
+              <div class="cf-row"><span class="cf-lbl">Monthly cash flow</span><span class="cf-val" id="cf-mcf">—</span></div>
+            </div>
+            <div>
+              <div style="font-size:9px;color:var(--dim);letter-spacing:.8px;text-transform:uppercase;margin-bottom:10px">Annual Returns</div>
+              <div class="cf-row"><span class="cf-lbl">Annual cash flow</span><span class="cf-val" id="cf-acf">—</span></div>
+              <div class="cf-row"><span class="cf-lbl">Cash-on-cash return</span><span class="cf-val g" id="cf-coc">—</span></div>
+              <div class="cf-row"><span class="cf-lbl">GRM</span><span class="cf-val" id="cf-grm">—</span></div>
+              <div class="cf-row"><span class="cf-lbl">Cap rate (est.)</span><span class="cf-val g" id="cf-cap">—</span></div>
+              <div class="cf-row"><span class="cf-lbl">NOI (annual)</span><span class="cf-val" id="cf-noi">—</span></div>
+              <div class="cf-row"><span class="cf-lbl">Equity at purchase</span><span class="cf-val" id="cf-eq">—</span></div>
+              <div class="cf-row"><span class="cf-lbl">DSCR</span><span class="cf-val" id="cf-dscr">—</span></div>
+            </div>
+          </div>
+          <div class="ai-box" id="ai-box" style="display:none">
+            <div class="ai-lbl">Claude's Analysis</div>
+            <div class="ai-text" id="ai-text">—</div>
+          </div>
+        </div>
+        <div class="cta-row">
+          <button class="btn btn-primary" onclick="openReport()">Generate Report ↗</button>
+          <button class="btn btn-ghost" onclick="saveDeal()">Save Deal</button>
+          <button class="btn btn-ghost" onclick="shareDeal()">Share Summary</button>
+        </div>
+      </div>
+
+      <!-- PROPERTY DETAILS TAB -->
+      <div id="tab-property" class="tab-panel" style="display:none">
+        <div class="sec">
+          <div class="sec-hdr">Property Info <span class="edit-hint">— click any field to edit</span></div>
+          <div class="prop-grid">
+            <div class="pfield"><div class="pfield-lbl">Address</div><input id="p-addr" class="g" placeholder="—"/></div>
+            <div class="pfield"><div class="pfield-lbl">Est. Market Value</div><input id="p-val" type="number" class="g" placeholder="0" oninput="onPropEdit()"/></div>
+            <div class="pfield"><div class="pfield-lbl">Tax Assessed</div><input id="p-tax" type="number" placeholder="0"/></div>
+            <div class="pfield"><div class="pfield-lbl">Bedrooms</div><input id="p-beds" placeholder="—"/></div>
+            <div class="pfield"><div class="pfield-lbl">Bathrooms</div><input id="p-baths" placeholder="—"/></div>
+            <div class="pfield"><div class="pfield-lbl">Sq Ft</div><input id="p-sqft" placeholder="—"/></div>
+            <div class="pfield"><div class="pfield-lbl">Year Built</div><input id="p-yr" placeholder="—"/></div>
+            <div class="pfield"><div class="pfield-lbl">Property Type</div><input id="p-type" placeholder="Single Family"/></div>
+            <div class="pfield"><div class="pfield-lbl">Neighborhood</div><input id="p-hood" placeholder="—"/></div>
+            <div class="pfield"><div class="pfield-lbl">Lot Size</div><input id="p-lot" placeholder="—"/></div>
+            <div class="pfield"><div class="pfield-lbl">Owner Name</div><input id="p-own" placeholder="—"/></div>
+            <div class="pfield"><div class="pfield-lbl">Zoning</div><input id="p-zone" placeholder="—"/></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DEAL INPUTS TAB -->
+      <div id="tab-inputs" class="tab-panel" style="display:none">
+        <div class="sec">
+          <div class="sec-hdr">Deal Inputs — adjust to recalculate</div>
+          <div class="input-grid">
+            <div class="ifield"><label>Purchase Price ($)</label><input type="number" id="in-price" placeholder="0" oninput="liveCalc()"/></div>
+            <div class="ifield"><label>Down Payment (%)</label><input type="number" id="in-down" value="20" oninput="liveCalc()"/></div>
+            <div class="ifield"><label>Interest Rate (%)</label><input type="number" id="in-rate" value="7.0" step="0.1" oninput="liveCalc()"/></div>
+            <div class="ifield"><label>Loan Term (yrs)</label><input type="number" id="in-term" value="30" oninput="liveCalc()"/></div>
+            <div class="ifield"><label>Gross Monthly Rent ($)</label><input type="number" id="in-rent" placeholder="0" oninput="liveCalc()"/></div>
+            <div class="ifield"><label>Vacancy Rate (%)</label><input type="number" id="in-vac" value="8" oninput="liveCalc()"/></div>
+            <div class="ifield"><label>Property Mgmt (%)</label><input type="number" id="in-mgmt" value="10" oninput="liveCalc()"/></div>
+            <div class="ifield"><label>Est. Repair Cost ($)</label><input type="number" id="in-repair" value="0" oninput="liveCalc()"/></div>
+            <div class="ifield"><label>ARV ($)</label><input type="number" id="in-arv" placeholder="0" oninput="liveCalc()"/></div>
+            <div class="ifield"><label>Desired Profit (%)</label><input type="number" id="in-profit" value="30" oninput="liveCalc()"/></div>
+            <div class="ifield"><label>Rent Growth/yr (%)</label><input type="number" id="in-rentg" value="3" oninput="liveCalc()"/></div>
+            <div class="ifield"><label>Expense Growth/yr (%)</label><input type="number" id="in-expg" value="2" oninput="liveCalc()"/></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5-YEAR TAB -->
+      <div id="tab-5yr" class="tab-panel" style="display:none">
+        <div class="sec">
+          <div class="sec-hdr">5-Year Cash Flow Projection</div>
+          <div class="tbl-wrap">
+            <table><thead><tr><th>Year</th><th>Gross Rent</th><th>Vacancy</th><th>Eff. Income</th><th>Expenses</th><th>NOI</th><th>Mortgage</th><th>Cash Flow</th><th>CoC</th><th>Equity</th></tr></thead>
+            <tbody id="body-5yr"></tbody></table>
+          </div>
+        </div>
+        <div class="sec">
+          <div class="sec-hdr">Mortgage Amortization (Annual)</div>
+          <div class="tbl-wrap">
+            <table><thead><tr><th>Year</th><th>Annual Payment</th><th>Principal</th><th>Interest</th><th>Balance</th><th>Equity</th></tr></thead>
+            <tbody id="body-amort"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPS TAB -->
+      <div id="tab-comps" class="tab-panel" style="display:none">
+        <div class="sec">
+          <div class="sec-hdr">Comparable Sales <span style="background:rgba(62,207,142,.15);color:var(--green);font-size:9px;padding:2px 7px;border-radius:4px;border:1px solid rgba(62,207,142,.25);margin-left:6px;">AI Estimated</span></div>
+          <div class="tbl-wrap">
+            <table><thead><tr><th>Address</th><th>Beds/Baths</th><th>Sq Ft</th><th>Sale Price</th><th>$/SqFt</th><th>Date</th><th>Notes</th></tr></thead>
+            <tbody id="body-comps"></tbody></table>
+          </div>
+          <div style="font-size:10px;color:var(--dim);margin-top:8px">AI-estimated comps based on market knowledge. Verify independently before making offers.</div>
+        </div>
+      </div>
+
+      <!-- AMORT TAB (duplicate slot) -->
+      <div id="tab-amort" class="tab-panel" style="display:none">
+        <div class="sec">
+          <div class="sec-hdr">Mortgage Amortization (Annual)</div>
+          <div class="tbl-wrap">
+            <table><thead><tr><th>Year</th><th>Annual Payment</th><th>Principal</th><th>Interest</th><th>Balance</th><th>Equity</th></tr></thead>
+            <tbody id="body-amort2"></tbody></table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /results-area -->
+  </div><!-- /main-analyzer -->
+
+  <!-- ── SAVED DEALS ── -->
+  <div id="main-saved" style="display:none">
+    <div class="sec">
+      <div class="sec-hdr">Saved Deals</div>
+      <div id="saved-container"><div class="empty-state">No saved deals yet.</div></div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- PRINT REPORT -->
+<div class="rpt-overlay" id="rpt-overlay">
+  <button class="close-rpt" onclick="closeReport()">✕ Close</button>
+  <div class="rpt-page" id="rpt-page"></div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>'$'+Math.round(+n||0).toLocaleString();
+const fmtp=n=>((+n)||0).toFixed(1)+'%';
+const fmtx=n=>((+n)||0).toFixed(2)+'x';
+
+let calcData={}, savedDeals=[], aiSummary='', selectedAddr='', placesReady=false;
+
+try{ savedDeals=JSON.parse(localStorage.getItem('phd_deals')||'[]'); renderSaved(); }catch(e){}
+
+// ── Google Places ──────────────────────────────────────────
+(function(){
+  const s=document.createElement('script');
+  s.src='https://maps.googleapis.com/maps/api/js?key=AIzaSyCgqlfb6HZGhFP2Ooh8-PLQuRj9dERLPmA&libraries=places&callback=onPlacesReady';
+  s.onerror=()=>{placesReady=false;};
+  document.head.appendChild(s);
+})();
+
+window.onPlacesReady=function(){
+  placesReady=true;
+  const inp=$('addr-input');
+  const svc=new google.maps.places.AutocompleteService();
+  const psvc=new google.maps.places.PlacesService(document.createElement('div'));
+  const dd=$('addr-dd');
+  let t=null;
+  inp.addEventListener('input',()=>{
+    clearTimeout(t);
+    const q=inp.value.trim();
+    if(q.length<3){dd.classList.remove('show');return;}
+    t=setTimeout(()=>{
+      svc.getPlacePredictions({input:q,types:['address'],componentRestrictions:{country:'us'}},(preds,status)=>{
+        if(status!==google.maps.places.PlacesServiceStatus.OK||!preds){dd.classList.remove('show');return;}
+        dd.innerHTML=preds.slice(0,5).map(p=>`
+          <div class="dd-item" data-pid="${p.place_id}">
+            <div class="dd-a1">${p.structured_formatting.main_text}</div>
+            <div class="dd-a2">${p.structured_formatting.secondary_text||''}</div>
+          </div>`).join('');
+        dd.classList.add('show');
+        dd.querySelectorAll('.dd-item').forEach(el=>{
+          el.addEventListener('mousedown',e=>{
+            e.preventDefault();
+            dd.classList.remove('show');
+            psvc.getDetails({placeId:el.dataset.pid,fields:['formatted_address','address_components','geometry']},(place,st)=>{
+              if(st!==google.maps.places.PlacesServiceStatus.OK) return;
+              inp.value=place.formatted_address;
+              selectedAddr=place.formatted_address;
+              prefillHood(place);
+            });
+          });
+        });
+      });
+    },300);
+  });
+  inp.addEventListener('blur',()=>setTimeout(()=>dd.classList.remove('show'),200));
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Escape') dd.classList.remove('show');
+    if(e.key==='Enter'){ selectedAddr=inp.value.trim(); analyzeAddress(); }
+  });
+};
+
+function prefillHood(place){
+  const get=type=>{const c=place.address_components?.find(x=>x.types.includes(type));return c?c.long_name:'';};
+  $('p-hood').value=get('neighborhood')||get('sublocality')||get('locality')||'';
+}
+
+// ── Main analysis: call Claude to get ALL property data ──
+async function analyzeAddress(){
+  const addr=selectedAddr||$('addr-input').value.trim();
+  if(!addr){$('addr-input').focus();return;}
+  selectedAddr=addr;
+  $('addr-input').value=addr;
+
+  const btn=$('analyze-btn');
+  btn.disabled=true;
+  $('btn-text').textContent='Analyzing...';
+
+  showStatus();
+  setStep(1);
+
+  try {
+    setStep(2);
+    const propData = await callClaude(
+      `You are a real estate data expert for PHD Properties based in Charleston, SC.
+Given a US property address, return ONLY a valid JSON object — no markdown, no explanation.
+Fields:
+{
+  "estimatedValue": number,
+  "estimatedMonthlyRent": number,
+  "estimatedARV": number,
+  "beds": string,
+  "baths": string,
+  "sqft": string,
+  "yearBuilt": string,
+  "propertyType": string,
+  "neighborhood": string,
+  "lotSize": string,
+  "taxAssessed": number,
+  "ownerName": string,
+  "zoning": string,
+  "repairEstimate": number,
+  "marketNotes": string
+}
+Use your best knowledge of the local market for estimates. estimatedARV should be about 10-15% above estimatedValue for typical SFR. repairEstimate should be 0 for newer homes, up to 25000 for older homes needing work.`,
+      `Property address: ${addr}`
+    );
+
+    let prop;
+    try {
+      prop = JSON.parse(propData.replace(/```json|```/g,'').trim());
+    } catch(e) {
+      // Try to extract JSON from response
+      const match = propData.match(/\{[\s\S]*\}/);
+      prop = match ? JSON.parse(match[0]) : {};
+    }
+
+    setStep(3);
+
+    // Fill property fields
+    $('p-addr').value = addr;
+    $('p-val').value = prop.estimatedValue || '';
+    $('p-tax').value = prop.taxAssessed || '';
+    $('p-beds').value = prop.beds || '';
+    $('p-baths').value = prop.baths || '';
+    $('p-sqft').value = prop.sqft || '';
+    $('p-yr').value = prop.yearBuilt || '';
+    $('p-type').value = prop.propertyType || 'Single Family';
+    $('p-hood').value = prop.neighborhood || '';
+    $('p-lot').value = prop.lotSize || '';
+    $('p-own').value = prop.ownerName || '';
+    $('p-zone').value = prop.zoning || '';
+
+    // Fill deal inputs
+    const price = prop.estimatedValue || 0;
+    $('in-price').value = price;
+    $('in-rent').value = prop.estimatedMonthlyRent || Math.round(price * 0.006);
+    $('in-arv').value = prop.estimatedARV || Math.round(price * 1.12);
+    $('in-repair').value = prop.repairEstimate || 0;
+
+    setStep(4);
+    doCalc();
+
+    // Show results
+    $('results-area').style.display = 'block';
+    $('r-addr').textContent = addr;
+    $('m-val').textContent = fmt(price);
+    $('m-rent').textContent = fmt(prop.estimatedMonthlyRent || 0)+'/mo';
+
+    // Update meta line
+    const metaParts=[prop.propertyType,prop.neighborhood,prop.beds?prop.beds+' bd':'',prop.baths?prop.baths+' ba':'',prop.sqft?prop.sqft+' sqft':'',prop.yearBuilt?'Built '+prop.yearBuilt:''].filter(Boolean);
+    $('r-meta').innerHTML=metaParts.map(p=>`<span>${p}</span>`).join(' · ');
+
+    // Build comps async
+    setStep(5);
+    buildComps();
+    genAISummary(prop.marketNotes||'');
+
+    hideStatus();
+    $('search-hero').style.paddingBottom='12px';
+
+  } catch(err) {
+    hideStatus();
+    alert('Analysis failed. Please check your connection and try again.\n'+err.message);
+  }
+
+  btn.disabled=false;
+  $('btn-text').textContent='Analyze →';
+}
+
+function setStep(n){
+  for(let i=1;i<=5;i++){
+    const el=$(`step-${i}`);
+    if(i<n) el.classList.add('done'),el.classList.remove('active');
+    else if(i===n) el.classList.add('active'),el.classList.remove('done');
+    else el.classList.remove('active','done');
+  }
+}
+function showStatus(){ $('status-bar').classList.add('show'); }
+function hideStatus(){ $('status-bar').classList.remove('show'); }
+
+// ── Calculations ──────────────────────────────────────────
+let calcTimer=null;
+function liveCalc(){ clearTimeout(calcTimer); calcTimer=setTimeout(doCalc,200); }
+
+function onPropEdit(){
+  const v=+$('p-val').value;
+  if(v){ $('in-price').value=v; $('in-rent').value=Math.round(v*0.006); $('in-arv').value=Math.round(v*1.12); liveCalc(); }
+}
+
+function doCalc(){
+  const price=+$('in-price').value||0; if(!price) return;
+  const down=+$('in-down').value/100;
+  const mRate=+$('in-rate').value/100/12;
+  const termM=+$('in-term').value*12;
+  const rent=+$('in-rent').value||0;
+  const vac=+$('in-vac').value/100;
+  const mgmt=+$('in-mgmt').value/100;
+  const repair=+$('in-repair').value||0;
+  const arv=+$('in-arv').value||price*1.12;
+  const desiredP=+$('in-profit').value/100;
+  const rentG=+$('in-rentg').value/100||0.03;
+  const expG=+$('in-expg').value/100||0.02;
+
+  const loan=price*(1-down), downAmt=price*down;
+  const mort=mRate>0?loan*(mRate*Math.pow(1+mRate,termM))/(Math.pow(1+mRate,termM)-1):loan/termM;
+  const vacAmt=rent*vac, effRent=rent-vacAmt;
+  const mgmtAmt=effRent*mgmt, ti=price*0.015/12, maint=price*0.01/12;
+  const noi_m=effRent-mgmtAmt-ti-maint, mcf=noi_m-mort;
+  const acf=mcf*12, noi_a=noi_m*12;
+  const capRate=price>0?(noi_a/price)*100:0;
+  const totalCash=downAmt+repair;
+  const coc=totalCash>0?(acf/totalCash)*100:0;
+  const grm=rent>0?price/(rent*12):0;
+  const mao=arv*(1-desiredP)-repair;
+  const profit=arv-price-repair;
+  const roi=totalCash>0?(profit/totalCash)*100:0;
+  const dscr=mort>0?noi_m/mort:0;
+  const vsMarket=(+$('p-val').value||0)>0?((price-(+$('p-val').value))/(+$('p-val').value)*100):0;
+
+  let rating='Fair',rc='fair';
+  if(capRate>=8&&coc>=8){rating='Strong Buy';rc='strong';}
+  else if(capRate>=6&&coc>=5){rating='Good Deal';rc='good';}
+  else if(capRate<4||coc<0){rating='Pass';rc='pass';}
+
+  // Update top metrics
+  $('m-cap').textContent=fmtp(capRate);
+  $('m-cap').className='mcard-val '+(capRate>=6?'g':capRate<4?'r':'a');
+  $('m-coc').textContent=fmtp(coc);
+  $('m-coc').className='mcard-val '+(coc>=5?'g':coc<0?'r':'a');
+  $('m-mcf').textContent=fmt(mcf)+'/mo';
+  $('m-mcf').className='mcard-val '+(mcf>=0?'g':'r');
+  $('m-mao').textContent=fmt(mao);
+  $('m-profit').textContent=fmt(profit);
+  $('m-profit').className='mcard-val '+(profit>=0?'g':'r');
+  $('m-rating').textContent=rating;
+  $('m-rating').className='mcard-val '+(rc==='strong'||rc==='good'?'g':rc==='pass'?'r':'a');
+  $('m-rating-sub').textContent=`Cap: ${fmtp(capRate)} / CoC: ${fmtp(coc)}`;
+
+  // Deal badge
+  const badge=$('r-deal-badge');
+  badge.textContent=rating;
+  badge.className='prop-badge '+({strong:'badge-strong',good:'badge-good',fair:'badge-fair',pass:'badge-pass'}[rc]);
+
+  // Cash flow rows
+  $('cf-vac-l').textContent=`Vacancy (${$('in-vac').value}%)`;
+  $('cf-mgmt-l').textContent=`Property mgmt (${$('in-mgmt').value}%)`;
+  $('cf-rent').textContent=fmt(rent)+'/mo';
+  $('cf-vac').textContent='-'+fmt(vacAmt)+'/mo';
+  $('cf-mgmt').textContent='-'+fmt(mgmtAmt)+'/mo';
+  $('cf-ti').textContent='-'+fmt(ti)+'/mo';
+  $('cf-mort').textContent='-'+fmt(mort)+'/mo';
+  $('cf-mnt').textContent='-'+fmt(maint)+'/mo';
+  const mcfEl=$('cf-mcf'); mcfEl.textContent=fmt(mcf)+'/mo'; mcfEl.className='cf-val '+(mcf>=0?'g':'r');
+  const acfEl=$('cf-acf'); acfEl.textContent=fmt(acf)+'/yr'; acfEl.className='cf-val '+(acf>=0?'g':'r');
+  $('cf-coc').textContent=fmtp(coc);
+  $('cf-grm').textContent=fmtx(grm);
+  $('cf-cap').textContent=fmtp(capRate);
+  $('cf-noi').textContent=fmt(noi_a)+'/yr';
+  $('cf-eq').textContent=fmt(downAmt);
+  $('cf-dscr').textContent=fmtx(dscr);
+
+  build5yr({price,down,mRate,termM,rent,vac,mgmt,repair,arv,desiredP,rentG,expG},mort,downAmt,totalCash);
+  buildAmort({price,down,mRate,termM},loan,mort,downAmt);
+
+  calcData={price,down,mRate,termM,rent,vac,mgmt,repair,arv,desiredP,rentG,expG,loan,downAmt,mort,mcf,acf,noi_a,capRate,coc,grm,dscr,mao,profit,roi,rating,rc,totalCash,vsMarket};
+}
+
+function build5yr(i,mort,downAmt,totalCash){
+  let rent=i.rent;
+  const tb=$('body-5yr'); tb.innerHTML='';
+  for(let y=1;y<=5;y++){
+    const vA=rent*i.vac,eR=rent-vA,mA=eR*i.mgmt,ti=i.price*0.015/12,mn=i.price*0.01/12;
+    const noi_a=(eR-mA-ti-mn)*12, cf_a=noi_a-mort*12;
+    const coc=totalCash>0?(cf_a/totalCash)*100:0;
+    let cumEq=downAmt,tmpB=i.price*(1-i.down);
+    for(let yy=0;yy<y;yy++) for(let m=0;m<12;m++){const ip=tmpB*i.mRate,pp=mort-ip;tmpB=Math.max(0,tmpB-pp);cumEq+=pp;}
+    tb.innerHTML+=`<tr>
+      <td style="font-weight:600;color:var(--green)">Yr ${y}</td>
+      <td>${fmt(rent*12)}</td>
+      <td style="color:var(--red)">(${fmt(vA*12)})</td>
+      <td>${fmt(eR*12)}</td>
+      <td style="color:var(--red)">(${fmt((mA+ti+mn)*12)})</td>
+      <td>${fmt(noi_a)}</td>
+      <td style="color:var(--red)">(${fmt(mort*12)})</td>
+      <td style="color:${cf_a>=0?'var(--green)':'var(--red)'};font-weight:600">${fmt(cf_a)}</td>
+      <td style="color:${coc>=0?'var(--green)':'var(--red)'}">${fmtp(coc)}</td>
+      <td style="color:var(--green)">${fmt(cumEq)}</td></tr>`;
+    rent*=(1+i.rentG);
+  }
+}
+
+function buildAmort(i,loan,mort,downAmt){
+  let bal=loan;
+  const yrs=Math.min(+$('in-term').value||30,30);
+  ['body-amort','body-amort2'].forEach(id=>{
+    const tb=$(id); if(!tb) return;
+    tb.innerHTML='';
+    let b=loan;
+    for(let y=1;y<=yrs;y++){
+      let tP=0,tI=0;
+      for(let m=0;m<12;m++){const ip=b*i.mRate,pp=mort-ip;tI+=ip;tP+=pp;b=Math.max(0,b-pp);}
+      const eq=loan-b+downAmt;
+      tb.innerHTML+=`<tr>
+        <td style="font-weight:500${y<=5?';color:var(--green)':''}">Yr ${y}</td>
+        <td>${fmt(mort*12)}</td>
+        <td style="color:var(--green)">${fmt(tP)}</td>
+        <td style="color:var(--red)">${fmt(tI)}</td>
+        <td>${fmt(b)}</td>
+        <td style="color:var(--green)">${fmt(eq)}</td></tr>`;
+      if(b<=0) break;
+    }
+  });
+}
+
+async function buildComps(){
+  const tb=$('body-comps');
+  tb.innerHTML=`<tr><td colspan="7" style="color:var(--muted);padding:12px 8px;font-style:italic"><span class="spin" style="display:inline-block;vertical-align:middle;margin-right:6px"></span>Loading comps...</td></tr>`;
+  try{
+    const text=await callClaude(
+      'You are a real estate comps engine. Return ONLY a JSON array of 4 comparable recent sales. Each: {address,bedsBaths,sqft,salePrice,pricePerSqft,date,notes}. No markdown.',
+      `Find 4 comparable recent sales near: ${selectedAddr}. Type: ${$('p-type').value||'residential'}`
+    );
+    const comps=JSON.parse(text.replace(/```json|```/g,'').trim());
+    tb.innerHTML=comps.map(c=>`<tr>
+      <td>${c.address}</td><td>${c.bedsBaths}</td><td>${c.sqft}</td>
+      <td style="color:var(--green)">${fmt(c.salePrice)}</td>
+      <td>$${Math.round(c.pricePerSqft)}/sf</td>
+      <td style="color:var(--dim)">${c.date}</td>
+      <td style="font-size:10px;color:var(--dim)">${c.notes||''}</td></tr>`).join('');
+  }catch(e){
+    tb.innerHTML=`<tr><td colspan="7" style="color:var(--dim);font-style:italic;padding:10px 8px">Could not load comps.</td></tr>`;
+  }
+}
+
+async function genAISummary(marketNotes){
+  if(!calcData.price) return;
+  $('ai-box').style.display='block';
+  $('ai-text').innerHTML='<span class="spin" style="display:inline-block;vertical-align:middle;margin-right:6px"></span>Generating analysis...';
+  const {capRate,coc,mcf,acf,noi_a,grm,dscr,mao,profit,roi,rating}=calcData;
+  const summary=await callClaude(
+    'You are a real estate investment analyst for PHD Properties, Charleston SC. Write a concise 3-4 sentence deal summary: quality, key strengths/risks, recommendation. Direct and professional. Plain text only.',
+    `Address: ${selectedAddr}
+Price: ${fmt(calcData.price)} | Cap Rate: ${fmtp(capRate)} | CoC: ${fmtp(coc)}
+Monthly CF: ${fmt(mcf)} | NOI: ${fmt(noi_a)} | GRM: ${fmtx(grm)} | DSCR: ${fmtx(dscr)}
+Rating: ${rating} | MAO: ${fmt(mao)} | Profit: ${fmt(profit)} | ROI: ${fmtp(roi)}
+${marketNotes?'Market context: '+marketNotes:''}`
+  ).catch(()=>'');
+  aiSummary=summary;
+  $('ai-text').textContent=summary||'Analysis unavailable.';
+}
+
+async function callClaude(system, user){
+  const r=await fetch('/api/claude',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({system,user})
+  });
+  const d=await r.json();
+  if(d.error) throw new Error(d.error);
+  return d.text||'';
+}
+
+// ── Report ──────────────────────────────────────────────────
+function openReport(){
+  if(!calcData.price) return;
+  const {price,down,mRate,mort,downAmt,mcf,acf,noi_a,capRate,coc,grm,dscr,mao,profit,roi,rating,rc,arv,repair,rentG}=calcData;
+  const rc2={'strong':'g','good':'g','fair':'a','pass':'r'}[rc]||'a';
+  const ratingColor={'strong':'#1a7a55','good':'#2fb87a','fair':'#b87a10','pass':'#c0392b'}[rc]||'#b87a10';
+  const today=new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const addr=$('p-addr').value||selectedAddr;
+  const beds=$('p-beds').value,baths=$('p-baths').value,sqft=$('p-sqft').value,yr=$('p-yr').value,ptype=$('p-type').value,hood=$('p-hood').value;
+  let rent5=+$('in-rent').value,rows5='';
+  for(let y=1;y<=5;y++){
+    const vA=rent5*(+$('in-vac').value/100),eR=rent5-vA,mA=eR*(+$('in-mgmt').value/100),ti=price*0.015/12,mn=price*0.01/12;
+    const cf_a=(eR-mA-ti-mn-mort)*12;
+    let cumEq=downAmt,tmpB=price*(1-down);
+    for(let yy=0;yy<y;yy++) for(let m=0;m<12;m++){const ip=tmpB*mRate,pp=mort-ip;tmpB=Math.max(0,tmpB-pp);cumEq+=pp;}
+    rows5+=`<tr><td>Year ${y}</td><td>${fmt(rent5*12)}</td><td>${fmt((eR-(+$('in-mgmt').value/100)*eR-price*0.015/12-price*0.01/12)*12)}</td><td style="color:${cf_a>=0?'#1a7a55':'#c0392b'};font-weight:600">${fmt(cf_a)}</td><td style="color:#1a7a55">${fmt(cumEq)}</td></tr>`;
+    rent5*=(1+rentG);
+  }
+  $('rpt-page').innerHTML=`
+  <div class="rh">
+    <div class="rl">PHD Properties<span>INVESTMENT ANALYSIS REPORT</span></div>
+    <div class="ra">444 Race St, Charleston, SC 29403<br>phdproperties.realestate<br>${today}</div>
+  </div>
+  <div class="rb">
+    <div class="rp-prop">
+      <h2>${addr||'Property Analysis'}</h2>
+      <div class="sub">${[ptype,hood,beds?beds+' bd':'',baths?baths+' ba':'',sqft?sqft+' sqft':'',yr?'Built '+yr:''].filter(Boolean).join(' · ')}</div>
+    </div>
+    <div class="rs"><h3>Deal Analysis</h3><div class="rg">
+      <div class="rc-card"><div class="rl2">Purchase Price</div><div class="rv">${fmt(price)}</div></div>
+      <div class="rc-card"><div class="rl2">ARV</div><div class="rv g">${fmt(arv)}</div></div>
+      <div class="rc-card"><div class="rl2">Max Allowable Offer</div><div class="rv a">${fmt(mao)}</div></div>
+      <div class="rc-card"><div class="rl2">Potential Profit</div><div class="rv ${profit>=0?'g':'r'}">${fmt(profit)}</div></div>
+      <div class="rc-card"><div class="rl2">Deal Rating</div><div class="rv" style="color:${ratingColor}">${rating}</div></div>
+      <div class="rc-card"><div class="rl2">ROI</div><div class="rv">${fmtp(roi)}</div></div>
+      <div class="rc-card"><div class="rl2">Repair Cost</div><div class="rv">${fmt(repair)}</div></div>
+      <div class="rc-card"><div class="rl2">Total Cash In</div><div class="rv">${fmt(downAmt+repair)}</div></div>
+    </div></div>
+    <div class="rs"><h3>Cash Flow</h3><div class="rcf">
+      <div>
+        <div class="rr"><span class="rl3">Gross Rent</span><span class="rv2" style="color:#1a7a55">${fmt(+$('in-rent').value)}/mo</span></div>
+        <div class="rr"><span class="rl3">Taxes &amp; Insurance</span><span class="rv2" style="color:#c0392b">-${fmt(price*0.015/12)}/mo</span></div>
+        <div class="rr"><span class="rl3">Mortgage</span><span class="rv2" style="color:#c0392b">-${fmt(mort)}/mo</span></div>
+        <div class="rr"><span class="rl3">Maintenance</span><span class="rv2" style="color:#c0392b">-${fmt(price*0.01/12)}/mo</span></div>
+        <div class="rr" style="border-top:2px solid #ddd;padding-top:5px;font-weight:700"><span class="rl3">Monthly Cash Flow</span><span class="rv2" style="color:${mcf>=0?'#1a7a55':'#c0392b'}">${fmt(mcf)}</span></div>
+      </div>
+      <div>
+        <div class="rr"><span class="rl3">Annual Cash Flow</span><span class="rv2" style="color:${acf>=0?'#1a7a55':'#c0392b'};font-weight:700">${fmt(acf)}</span></div>
+        <div class="rr"><span class="rl3">Cap Rate</span><span class="rv2" style="color:#1a7a55">${fmtp(capRate)}</span></div>
+        <div class="rr"><span class="rl3">Cash-on-Cash</span><span class="rv2" style="color:#1a7a55">${fmtp(coc)}</span></div>
+        <div class="rr"><span class="rl3">NOI (Annual)</span><span class="rv2">${fmt(noi_a)}</span></div>
+        <div class="rr"><span class="rl3">GRM / DSCR</span><span class="rv2">${fmtx(grm)} / ${fmtx(dscr)}</span></div>
+        <div class="rr"><span class="rl3">Equity at Purchase</span><span class="rv2" style="color:#1a7a55">${fmt(downAmt)}</span></div>
+      </div>
+    </div></div>
+    <div class="rs"><h3>5-Year Projection</h3>
+      <table class="r5"><thead><tr><th>Year</th><th>Gross Rent</th><th>NOI</th><th>Cash Flow</th><th>Equity</th></tr></thead><tbody>${rows5}</tbody></table>
+    </div>
+    ${aiSummary?`<div class="rs"><h3>Investment Summary</h3><div class="rsummary">${aiSummary}</div></div>`:''}
+  </div>
+  <div class="rfoot"><span>PHD Properties · peter@phdproperties.realestate · phdproperties.realestate</span><span>Generated ${today} · For informational purposes only. All estimates AI-generated.</span></div>`;
+  $('rpt-overlay').classList.add('open');
+  setTimeout(()=>window.print(),400);
+}
+function closeReport(){ $('rpt-overlay').classList.remove('open'); }
+
+// ── Save / Share ──────────────────────────────────────────
+function saveDeal(){
+  if(!calcData.price) return;
+  const deal={id:Date.now(),addr:selectedAddr,type:$('p-type').value||'Property',price:calcData.price,capRate:calcData.capRate,coc:calcData.coc,mcf:calcData.mcf,rating:calcData.rating,rc:calcData.rc,saved:new Date().toLocaleDateString(),snapshot:{...calcData}};
+  savedDeals=savedDeals.filter(d=>d.addr!==deal.addr);
+  savedDeals.unshift(deal);
+  try{localStorage.setItem('phd_deals',JSON.stringify(savedDeals));}catch(e){}
+  renderSaved();
+  const btn=event.target; btn.textContent='Saved ✓'; setTimeout(()=>btn.textContent='Save Deal',2000);
+}
+
+function renderSaved(){
+  $('saved-count').textContent=savedDeals.length?`(${savedDeals.length})`:'';
+  const c=$('saved-container');
+  if(!savedDeals.length){c.innerHTML='<div class="empty-state">No saved deals yet.</div>';return;}
+  c.innerHTML='<div class="saved-list">'+savedDeals.map(d=>`
+    <div class="saved-item" onclick="loadSaved(${d.id})">
+      <div>
+        <div class="si-addr">${d.addr}</div>
+        <div class="si-meta">${d.type} · ${fmt(d.price)} · Saved ${d.saved}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="text-align:center"><div style="font-size:9px;color:var(--dim)">Cap Rate</div><div style="font-size:14px;font-weight:700;color:var(--green);font-family:'Syne',sans-serif">${fmtp(d.capRate)}</div></div>
+        <div style="text-align:center"><div style="font-size:9px;color:var(--dim)">CoC</div><div style="font-size:14px;font-weight:700;color:var(--green);font-family:'Syne',sans-serif">${fmtp(d.coc)}</div></div>
+        <span class="prop-badge ${{'strong':'badge-strong','good':'badge-good','fair':'badge-fair','pass':'badge-pass'}[d.rc]||'badge-fair'}">${d.rating}</span>
+        <button onclick="event.stopPropagation();deleteSaved(${d.id})" style="background:none;border:none;color:var(--dim);cursor:pointer;font-size:14px;padding:4px">✕</button>
+      </div>
+    </div>`).join('')+'</div>';
+}
+
+function loadSaved(id){
+  const d=savedDeals.find(x=>x.id==id); if(!d) return;
+  showMain('analyzer');
+  selectedAddr=d.addr;
+  $('addr-input').value=d.addr;
+  $('p-addr').value=d.addr;
+  $('p-type').value=d.type;
+  $('in-price').value=d.price;
+  calcData=d.snapshot;
+  $('results-area').style.display='block';
+  $('r-addr').textContent=d.addr;
+  doCalc();
+}
+
+function deleteSaved(id){
+  savedDeals=savedDeals.filter(d=>d.id!=id);
+  try{localStorage.setItem('phd_deals',JSON.stringify(savedDeals));}catch(e){}
+  renderSaved();
+}
+
+function shareDeal(){
+  if(!calcData.price) return;
+  const {capRate,coc,mcf,noi_a,rating}=calcData;
+  const txt=`PHD Properties — Investment Analysis\n${selectedAddr}\n\nCap Rate: ${fmtp(capRate)} | Cash-on-Cash: ${fmtp(coc)} | Monthly CF: ${fmt(mcf)} | NOI: ${fmt(noi_a)}\nDeal Rating: ${rating}\n\nPHD Properties · phdproperties.realestate`;
+  navigator.clipboard.writeText(txt).then(()=>{const b=event.target;b.textContent='Copied ✓';setTimeout(()=>b.textContent='Share Summary',2000);}).catch(()=>alert(txt));
+}
+
+// ── Tab / Nav helpers ──────────────────────────────────────
+function showTab(btn, panelId){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('.tab-panel').forEach(p=>p.style.display='none');
+  $(panelId).style.display='block';
+}
+
+function showMain(which){
+  $('main-analyzer').style.display=which==='analyzer'?'block':'none';
+  $('main-saved').style.display=which==='saved'?'block':'none';
+  document.querySelectorAll('.nav-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&which==='analyzer')||(i===1&&which==='saved')));
+}
+</script>
+</body>
+</html>
