@@ -2,7 +2,7 @@
 // 'gemini-2.0-flash'        → fast, free tier friendly (recommended)
 // 'gemini-2.5-pro-preview-05-06' → most capable
 // 'gemini-2.0-flash-lite'   → lightest/cheapest
-const GEMINI_MODEL = 'gemini-2.5-flash-lite';
+const GEMINI_MODEL = 'gemini-3.1-flash-lite-preview';
 
 export default async function handler(req, res) {
   // CORS headers
