@@ -300,7 +300,7 @@ tbody tr:last-child td{border:none}
 
   <!-- ── ANALYZER ── -->
   <div id="main-analyzer">
-    <div class="search-hero">
+    <div class="search-hero" id="search-hero">
       <div class="hero-label">AI-Powered Analysis</div>
       <div class="hero-title">Enter an address.<br>Get a full investment report.</div>
       <div class="hero-sub">Claude AI pulls property data, estimates rent, comps &amp; ROI — instantly.</div>
@@ -381,7 +381,11 @@ tbody tr:last-child td{border:none}
               <div class="cf-row"><span class="cf-lbl">Gross rent</span><span class="cf-val g" id="cf-rent">—</span></div>
               <div class="cf-row"><span class="cf-lbl" id="cf-vac-l">Vacancy</span><span class="cf-val r" id="cf-vac">—</span></div>
               <div class="cf-row"><span class="cf-lbl" id="cf-mgmt-l">Property mgmt</span><span class="cf-val r" id="cf-mgmt">—</span></div>
-              <div class="cf-row"><span class="cf-lbl">Taxes &amp; insurance (est.)</span><span class="cf-val r" id="cf-ti">—</span></div>
+              <div class="cf-row"><span class="cf-lbl">Property taxes (est.)</span><span class="cf-val r" id="cf-tax">—</span></div>
+              <div class="cf-row">
+                <span class="cf-lbl">Landlord insurance <span id="ins-badge" style="font-size:9px;background:rgba(62,207,142,.15);color:var(--green);border:1px solid rgba(62,207,142,.25);border-radius:3px;padding:1px 5px;margin-left:4px">AI Est.</span></span>
+                <span class="cf-val r" id="cf-ins">—</span>
+              </div>
               <div class="cf-row"><span class="cf-lbl">Mortgage payment</span><span class="cf-val r" id="cf-mort">—</span></div>
               <div class="cf-row"><span class="cf-lbl">Maintenance (1%/yr)</span><span class="cf-val r" id="cf-mnt">—</span></div>
               <div class="cf-row"><span class="cf-lbl">Monthly cash flow</span><span class="cf-val" id="cf-mcf">—</span></div>
@@ -443,6 +447,7 @@ tbody tr:last-child td{border:none}
             <div class="ifield"><label>Vacancy Rate (%)</label><input type="number" id="in-vac" value="8" oninput="liveCalc()"/></div>
             <div class="ifield"><label>Property Mgmt (%)</label><input type="number" id="in-mgmt" value="10" oninput="liveCalc()"/></div>
             <div class="ifield"><label>Est. Repair Cost ($)</label><input type="number" id="in-repair" value="0" oninput="liveCalc()"/></div>
+            <div class="ifield"><label>Annual Insurance ($) <span style="font-size:9px;color:var(--green)">AI Est.</span></label><input type="number" id="in-insurance" value="0" oninput="liveCalc()"/></div>
             <div class="ifield"><label>ARV ($)</label><input type="number" id="in-arv" placeholder="0" oninput="liveCalc()"/></div>
             <div class="ifield"><label>Desired Profit (%)</label><input type="number" id="in-profit" value="30" oninput="liveCalc()"/></div>
             <div class="ifield"><label>Rent Growth/yr (%)</label><input type="number" id="in-rentg" value="3" oninput="liveCalc()"/></div>
@@ -611,9 +616,12 @@ Fields:
   "ownerName": string,
   "zoning": string,
   "repairEstimate": number,
+  "annualInsuranceEstimate": number,
+  "insuranceNotes": string,
   "marketNotes": string
 }
-Use your best knowledge of the local market for estimates. estimatedARV should be about 10-15% above estimatedValue for typical SFR. repairEstimate should be 0 for newer homes, up to 25000 for older homes needing work.`,
+Use your best knowledge of the local market. estimatedARV should be 10-15% above estimatedValue for typical SFR. repairEstimate: 0 for newer homes, up to 25000 for older homes.
+For annualInsuranceEstimate: estimate realistic landlord/rental property insurance (NOT homeowner's insurance). Factor in property value, age, location (coastal/flood risk, hurricane exposure, crime rate), property type, and sqft. Typical range is $800–$4000/yr for SFR. Higher for coastal/flood zones, older homes, or higher-value properties. insuranceNotes should explain the key factors driving the estimate in one sentence.`,
       `Property address: ${addr}`
     );
 
@@ -648,6 +656,12 @@ Use your best knowledge of the local market for estimates. estimatedARV should b
     $('in-rent').value = prop.estimatedMonthlyRent || Math.round(price * 0.006);
     $('in-arv').value = prop.estimatedARV || Math.round(price * 1.12);
     $('in-repair').value = prop.repairEstimate || 0;
+    $('in-insurance').value = prop.annualInsuranceEstimate || Math.round(price * 0.006);
+
+    // Store insurance notes for display
+    if(prop.insuranceNotes){
+      window._insuranceNotes = prop.insuranceNotes;
+    }
 
     setStep(4);
     doCalc();
@@ -668,7 +682,7 @@ Use your best knowledge of the local market for estimates. estimatedARV should b
     genAISummary(prop.marketNotes||'');
 
     hideStatus();
-    $('search-hero').style.paddingBottom='12px';
+    const hero=$('search-hero'); if(hero) hero.style.paddingBottom='12px';
 
   } catch(err) {
     hideStatus();
@@ -716,8 +730,11 @@ function doCalc(){
   const loan=price*(1-down), downAmt=price*down;
   const mort=mRate>0?loan*(mRate*Math.pow(1+mRate,termM))/(Math.pow(1+mRate,termM)-1):loan/termM;
   const vacAmt=rent*vac, effRent=rent-vacAmt;
-  const mgmtAmt=effRent*mgmt, ti=price*0.015/12, maint=price*0.01/12;
-  const noi_m=effRent-mgmtAmt-ti-maint, mcf=noi_m-mort;
+  const mgmtAmt=effRent*mgmt;
+  const taxMo=price*0.012/12;                          // property tax ~1.2%/yr
+  const insMo=(+$('in-insurance').value||Math.round(price*0.006))/12; // insurance monthly
+  const maint=price*0.01/12;
+  const noi_m=effRent-mgmtAmt-taxMo-insMo-maint, mcf=noi_m-mort;
   const acf=mcf*12, noi_a=noi_m*12;
   const capRate=price>0?(noi_a/price)*100:0;
   const totalCash=downAmt+repair;
@@ -759,7 +776,13 @@ function doCalc(){
   $('cf-rent').textContent=fmt(rent)+'/mo';
   $('cf-vac').textContent='-'+fmt(vacAmt)+'/mo';
   $('cf-mgmt').textContent='-'+fmt(mgmtAmt)+'/mo';
-  $('cf-ti').textContent='-'+fmt(ti)+'/mo';
+  $('cf-tax').textContent='-'+fmt(taxMo)+'/mo';
+  $('cf-ins').textContent='-'+fmt(insMo)+'/mo';
+  // Show insurance notes tooltip if available
+  if(window._insuranceNotes){
+    $('ins-badge').title=window._insuranceNotes;
+    $('ins-badge').style.cursor='help';
+  }
   $('cf-mort').textContent='-'+fmt(mort)+'/mo';
   $('cf-mnt').textContent='-'+fmt(maint)+'/mo';
   const mcfEl=$('cf-mcf'); mcfEl.textContent=fmt(mcf)+'/mo'; mcfEl.className='cf-val '+(mcf>=0?'g':'r');
@@ -771,18 +794,18 @@ function doCalc(){
   $('cf-eq').textContent=fmt(downAmt);
   $('cf-dscr').textContent=fmtx(dscr);
 
-  build5yr({price,down,mRate,termM,rent,vac,mgmt,repair,arv,desiredP,rentG,expG},mort,downAmt,totalCash);
+  build5yr({price,down,mRate,termM,rent,vac,mgmt,repair,arv,desiredP,rentG,expG,insMo},mort,downAmt,totalCash);
   buildAmort({price,down,mRate,termM},loan,mort,downAmt);
 
-  calcData={price,down,mRate,termM,rent,vac,mgmt,repair,arv,desiredP,rentG,expG,loan,downAmt,mort,mcf,acf,noi_a,capRate,coc,grm,dscr,mao,profit,roi,rating,rc,totalCash,vsMarket};
+  calcData={price,down,mRate,termM,rent,vac,mgmt,repair,arv,desiredP,rentG,expG,loan,downAmt,mort,mcf,acf,noi_a,capRate,coc,grm,dscr,mao,profit,roi,rating,rc,totalCash,vsMarket,taxMo,insMo,maint};
 }
 
 function build5yr(i,mort,downAmt,totalCash){
   let rent=i.rent;
   const tb=$('body-5yr'); tb.innerHTML='';
   for(let y=1;y<=5;y++){
-    const vA=rent*i.vac,eR=rent-vA,mA=eR*i.mgmt,ti=i.price*0.015/12,mn=i.price*0.01/12;
-    const noi_a=(eR-mA-ti-mn)*12, cf_a=noi_a-mort*12;
+    const vA=rent*i.vac,eR=rent-vA,mA=eR*i.mgmt,taxMo=i.price*0.012/12,insMo=i.insMo,mn=i.price*0.01/12;
+    const noi_a=(eR-mA-taxMo-insMo-mn)*12, cf_a=noi_a-mort*12;
     const coc=totalCash>0?(cf_a/totalCash)*100:0;
     let cumEq=downAmt,tmpB=i.price*(1-i.down);
     for(let yy=0;yy<y;yy++) for(let m=0;m<12;m++){const ip=tmpB*i.mRate,pp=mort-ip;tmpB=Math.max(0,tmpB-pp);cumEq+=pp;}
@@ -791,7 +814,7 @@ function build5yr(i,mort,downAmt,totalCash){
       <td>${fmt(rent*12)}</td>
       <td style="color:var(--red)">(${fmt(vA*12)})</td>
       <td>${fmt(eR*12)}</td>
-      <td style="color:var(--red)">(${fmt((mA+ti+mn)*12)})</td>
+      <td style="color:var(--red)">(${fmt((mA+taxMo+insMo+mn)*12)})</td>
       <td>${fmt(noi_a)}</td>
       <td style="color:var(--red)">(${fmt(mort*12)})</td>
       <td style="color:${cf_a>=0?'var(--green)':'var(--red)'};font-weight:600">${fmt(cf_a)}</td>
@@ -855,6 +878,7 @@ async function genAISummary(marketNotes){
 Price: ${fmt(calcData.price)} | Cap Rate: ${fmtp(capRate)} | CoC: ${fmtp(coc)}
 Monthly CF: ${fmt(mcf)} | NOI: ${fmt(noi_a)} | GRM: ${fmtx(grm)} | DSCR: ${fmtx(dscr)}
 Rating: ${rating} | MAO: ${fmt(mao)} | Profit: ${fmt(profit)} | ROI: ${fmtp(roi)}
+Insurance: ${fmt(calcData.insMo*12)}/yr${window._insuranceNotes?' ('+window._insuranceNotes+')':''}
 ${marketNotes?'Market context: '+marketNotes:''}`
   ).catch(()=>'');
   aiSummary=summary;
@@ -913,9 +937,10 @@ function openReport(){
     <div class="rs"><h3>Cash Flow</h3><div class="rcf">
       <div>
         <div class="rr"><span class="rl3">Gross Rent</span><span class="rv2" style="color:#1a7a55">${fmt(+$('in-rent').value)}/mo</span></div>
-        <div class="rr"><span class="rl3">Taxes &amp; Insurance</span><span class="rv2" style="color:#c0392b">-${fmt(price*0.015/12)}/mo</span></div>
+        <div class="rr"><span class="rl3">Property Taxes</span><span class="rv2" style="color:#c0392b">-${fmt(calcData.taxMo)}/mo</span></div>
+        <div class="rr"><span class="rl3">Landlord Insurance (AI Est.)</span><span class="rv2" style="color:#c0392b">-${fmt(calcData.insMo)}/mo</span></div>
         <div class="rr"><span class="rl3">Mortgage</span><span class="rv2" style="color:#c0392b">-${fmt(mort)}/mo</span></div>
-        <div class="rr"><span class="rl3">Maintenance</span><span class="rv2" style="color:#c0392b">-${fmt(price*0.01/12)}/mo</span></div>
+        <div class="rr"><span class="rl3">Maintenance</span><span class="rv2" style="color:#c0392b">-${fmt(calcData.maint)}/mo</span></div>
         <div class="rr" style="border-top:2px solid #ddd;padding-top:5px;font-weight:700"><span class="rl3">Monthly Cash Flow</span><span class="rv2" style="color:${mcf>=0?'#1a7a55':'#c0392b'}">${fmt(mcf)}</span></div>
       </div>
       <div>
